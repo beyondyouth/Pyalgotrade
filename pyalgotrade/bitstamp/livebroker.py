@@ -36,7 +36,8 @@ def build_order_from_open_order(openOrder, instrumentTraits):
     else:
         raise Exception("Invalid order type")
 
-    ret = broker.LimitOrder(action, common.btc_symbol, openOrder.getPrice(), openOrder.getAmount(), instrumentTraits)
+    ret = broker.LimitOrder(action, common.btc_symbol, openOrder.getPrice(
+    ), openOrder.getAmount(), instrumentTraits)
     ret.setSubmitted(openOrder.getId(), openOrder.getDateTime())
     ret.setState(broker.Order.State.ACCEPTED)
     return ret
@@ -56,7 +57,8 @@ class TradeMonitor(threading.Thread):
         self.__stop = False
 
     def _getNewTrades(self):
-        userTrades = self.__httpClient.getUserTransactions(httpclient.HTTPClient.UserTransactionType.MARKET_TRADE)
+        userTrades = self.__httpClient.getUserTransactions(
+            httpclient.HTTPClient.UserTransactionType.MARKET_TRADE)
 
         # Get the new trades only.
         ret = [t for t in userTrades if t.getId() > self.__lastTradeId]
@@ -85,7 +87,8 @@ class TradeMonitor(threading.Thread):
                     common.logger.info("%d new trade/s found" % (len(trades)))
                     self.__queue.put((TradeMonitor.ON_USER_TRADE, trades))
             except Exception as e:
-                common.logger.critical("Error retrieving user transactions", exc_info=e)
+                common.logger.critical(
+                    "Error retrieving user transactions", exc_info=e)
 
             time.sleep(TradeMonitor.POLL_FREQUENCY)
 
@@ -153,14 +156,11 @@ class LiveBroker(broker.Broker):
 
         # Cash
         self.__cash = round(balance.getUSDAvailable(), 2)
-        common.logger.info("%s USD" % (self.__cash))
+        common.logger.info(f"{self.__cash} USD")
         # BTC
         btc = balance.getBTCAvailable()
-        if btc:
-            self.__shares = {common.btc_symbol: btc}
-        else:
-            self.__shares = {}
-        common.logger.info("%s BTC" % (btc))
+        self.__shares = {common.btc_symbol: btc} if btc else {}
+        common.logger.info(f"{btc} BTC")
 
         self.__stop = False  # No errors. Keep running.
 
@@ -169,7 +169,8 @@ class LiveBroker(broker.Broker):
         common.logger.info("Retrieving open orders.")
         openOrders = self.__httpClient.getOpenOrders()
         for openOrder in openOrders:
-            self._registerOrder(build_order_from_open_order(openOrder, self.getInstrumentTraits(common.btc_symbol)))
+            self._registerOrder(build_order_from_open_order(
+                openOrder, self.getInstrumentTraits(common.btc_symbol)))
 
         common.logger.info("%d open order/s found" % (len(openOrders)))
         self.__stop = False  # No errors. Keep running.
@@ -192,7 +193,8 @@ class LiveBroker(broker.Broker):
                 # Update cash and shares.
                 self.refreshAccountBalance()
                 # Update the order.
-                orderExecutionInfo = broker.OrderExecutionInfo(fillPrice, abs(btcAmount), fee, dateTime)
+                orderExecutionInfo = broker.OrderExecutionInfo(
+                    fillPrice, abs(btcAmount), fee, dateTime)
                 order.addExecutionInfo(orderExecutionInfo)
                 if not order.isActive():
                     self._unregisterOrder(order)
@@ -201,9 +203,11 @@ class LiveBroker(broker.Broker):
                     eventType = broker.OrderEvent.Type.FILLED
                 else:
                     eventType = broker.OrderEvent.Type.PARTIALLY_FILLED
-                self.notifyOrderEvent(broker.OrderEvent(order, eventType, orderExecutionInfo))
+                self.notifyOrderEvent(broker.OrderEvent(
+                    order, eventType, orderExecutionInfo))
             else:
-                common.logger.info("Trade %d refered to order %d that is not active" % (trade.getId(), trade.getOrderId()))
+                common.logger.info("Trade %d refered to order %d that is not active" % (
+                    trade.getId(), trade.getOrderId()))
 
     # BEGIN observer.Subject interface
     def start(self):
@@ -230,16 +234,20 @@ class LiveBroker(broker.Broker):
         for order in ordersToProcess:
             if order.isSubmitted():
                 order.switchState(broker.Order.State.ACCEPTED)
-                self.notifyOrderEvent(broker.OrderEvent(order, broker.OrderEvent.Type.ACCEPTED, None))
+                self.notifyOrderEvent(broker.OrderEvent(
+                    order, broker.OrderEvent.Type.ACCEPTED, None))
 
         # Dispatch events from the trade monitor.
         try:
-            eventType, eventData = self.__tradeMonitor.getQueue().get(True, LiveBroker.QUEUE_TIMEOUT)
+            eventType, eventData = self.__tradeMonitor.getQueue().get(
+                True, LiveBroker.QUEUE_TIMEOUT)
 
             if eventType == TradeMonitor.ON_USER_TRADE:
                 self._onUserTrades(eventData)
             else:
-                common.logger.error("Invalid event received to dispatch: %s - %s" % (eventType, eventData))
+                common.logger.error(
+                    f"Invalid event received to dispatch: {eventType} - {eventData}"
+                )
         except queue.Empty:
             pass
 
@@ -267,26 +275,23 @@ class LiveBroker(broker.Broker):
         return list(self.__activeOrders.values())
 
     def submitOrder(self, order):
-        if order.isInitial():
-            # Override user settings based on Bitstamp limitations.
-            order.setAllOrNone(False)
-            order.setGoodTillCanceled(True)
-
-            if order.isBuy():
-                bitstampOrder = self.__httpClient.buyLimit(order.getLimitPrice(), order.getQuantity())
-            else:
-                bitstampOrder = self.__httpClient.sellLimit(order.getLimitPrice(), order.getQuantity())
-
-            order.setSubmitted(bitstampOrder.getId(), bitstampOrder.getDateTime())
-            self._registerOrder(order)
-            # Switch from INITIAL -> SUBMITTED
-            # IMPORTANT: Do not emit an event for this switch because when using the position interface
-            # the order is not yet mapped to the position and Position.onOrderUpdated will get called.
-            order.switchState(broker.Order.State.SUBMITTED)
-        else:
+        if not order.isInitial():
             raise Exception("The order was already processed")
+        # Override user settings based on Bitstamp limitations.
+        order.setAllOrNone(False)
+        order.setGoodTillCanceled(True)
 
-    def createMarketOrder(self, action, instrument, quantity, onClose=False):
+        bitstampOrder = self.__httpClient.buyLimit(order.getLimitPrice(), order.getQuantity(
+        )) if order.isBuy() else self.__httpClient.sellLimit(order.getLimitPrice(), order.getQuantity())
+
+        order.setSubmitted(bitstampOrder.getId(), bitstampOrder.getDateTime())
+        self._registerOrder(order)
+        # Switch from INITIAL -> SUBMITTED
+        # IMPORTANT: Do not emit an event for this switch because when using the position interface
+        # the order is not yet mapped to the position and Position.onOrderUpdated will get called.
+        order.switchState(broker.Order.State.SUBMITTED)
+
+    def createMarketOrder(self, action, instrument, quantity, onClose=True):
         raise Exception("Market orders are not supported")
 
     def createLimitOrder(self, action, instrument, limitPrice, quantity):
@@ -327,6 +332,7 @@ class LiveBroker(broker.Broker):
         self.refreshAccountBalance()
 
         # Notify that the order was canceled.
-        self.notifyOrderEvent(broker.OrderEvent(order, broker.OrderEvent.Type.CANCELED, "User requested cancellation"))
+        self.notifyOrderEvent(broker.OrderEvent(
+            order, broker.OrderEvent.Type.CANCELED, "User requested cancellation"))
 
     # END broker.Broker interface

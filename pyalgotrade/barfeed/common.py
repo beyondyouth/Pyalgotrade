@@ -19,13 +19,7 @@
 """
 
 
-def sanitize_ohlc(open_, high, low, close):
-    if low > open_:
-        low = open_
-    if low > close:
-        low = close
-    if high < open_:
-        high = open_
-    if high < close:
-        high = close
+def sanitize_ohlc(open_: float, high: float, low: float, close: float) -> tuple[float, float, float, float]:
+    low = min(min(low, open_), close)
+    high = max(max(high, open_), close)
     return open_, high, low, close

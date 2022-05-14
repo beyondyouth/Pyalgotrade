@@ -431,7 +431,7 @@ class AnalyzerTestCase(common.TestCase):
         stratAnalyzer = returns.Returns()
         strat.attachAnalyzer(stratAnalyzer)
 
-        strat.marketOrder("spy", 1)
+        strat.marketOrder("spy", 1, onClose=False)
         strat.run()
         # The cumulative return should be the same if we load nikkei or not.
         self.assertEqual(round(stratAnalyzer.getCumulativeReturns()[-1], 5), 0.01338)
@@ -470,12 +470,12 @@ class AnalyzerTestCase(common.TestCase):
         # 33.06
         strat.scheduleCall(
             datetime.datetime(2001, 1, 12),
-            lambda: strat.marketOrder(AnalyzerTestCase.TestInstrument, 1)
+            lambda: strat.marketOrder(AnalyzerTestCase.TestInstrument, 1, onClose=False)
         )
         # 14.32
         strat.scheduleCall(
             datetime.datetime(2001, 11, 27),
-            lambda: strat.marketOrder(AnalyzerTestCase.TestInstrument, -1)
+            lambda: strat.marketOrder(AnalyzerTestCase.TestInstrument, -1, onClose=False)
         )
 
         stratAnalyzer = returns.Returns()
@@ -513,7 +513,7 @@ class AnalyzerTestCase(common.TestCase):
         closingPrice = 32.50
         strat.scheduleCall(
             datetime.datetime(2001, 1, 4),
-            lambda: strat.marketOrder(AnalyzerTestCase.TestInstrument, -initialShares)
+            lambda: strat.marketOrder(AnalyzerTestCase.TestInstrument, -initialShares, onClose=False)
         )
 
         stratAnalyzer = returns.Returns()

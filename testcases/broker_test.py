@@ -31,7 +31,7 @@ class DefaultTraits(broker.InstrumentTraits):
 
 
 class OrderTestCase(common.TestCase):
-    def __buildAcceptedLimitOrder(self, action, limitPrice, quantity):
+    def __buildAcceptedLimitOrder(self, action: broker.Order.Action, limitPrice, quantity):
         ret = broker.LimitOrder(action, "orcl", limitPrice, quantity, DefaultTraits())
         self.assertEqual(ret.getSubmitDateTime(), None)
         ret.switchState(broker.Order.State.SUBMITTED)

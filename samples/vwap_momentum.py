@@ -27,9 +27,9 @@ class VWAPMomentum(strategy.BacktestingStrategy):
         notional = shares * price
 
         if price > vwap * (1 + self.__threshold) and notional < 1000000:
-            self.marketOrder(self.__instrument, 100)
+            self.marketOrder(self.__instrument, 100, onClose=False)
         elif price < vwap * (1 - self.__threshold) and notional > 0:
-            self.marketOrder(self.__instrument, -100)
+            self.marketOrder(self.__instrument, -100, onClose=False)
 
 
 def main(plot):
