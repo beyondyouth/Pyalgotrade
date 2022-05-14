@@ -18,15 +18,18 @@
 .. moduleauthor:: Gabriel Martin Becedillas Ruiz <gabriel.becedillas@gmail.com>
 """
 
-from pyalgotrade import dispatcher
+from . import common
 
+from pyalgotrade import dispatcher, feed
 
 # This will test both the feed and subject interface.
-def tstBaseFeedInterface(testCase, feed):
+
+
+def tstBaseFeedInterface(testCase: common.TestCase, feed: feed.BaseFeed):
     # This tests the observer.Subject interface.
-    disp = dispatcher.Dispatcher()
-    disp.addSubject(feed)
-    disp.run()
+    d = dispatcher.Dispatcher()
+    d.addSubject(feed)
+    d.run()
 
     # This tests the feed.BaseFeed interface.
     feed.createDataSeries("any", 10)

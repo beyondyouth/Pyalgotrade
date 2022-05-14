@@ -54,10 +54,10 @@ class MarketTiming(strategy.BacktestingStrategy):
         return ret
 
     def _getTop(self):
-        ret = {}
-        for assetClass in self.__instrumentsByClass:
-            ret[assetClass] = self._getTopByClass(assetClass)
-        return ret
+        return {
+            assetClass: self._getTopByClass(assetClass)
+            for assetClass in self.__instrumentsByClass
+        }
 
     def _placePendingOrders(self):
         # Use less chash just in case price changes too much.
@@ -78,7 +78,7 @@ class MarketTiming(strategy.BacktestingStrategy):
 
             if orderSize != 0:
                 self.info("Placing market order for %d %s shares" % (orderSize, instrument))
-                self.marketOrder(instrument, orderSize, goodTillCanceled=True)
+                self.marketOrder(instrument, orderSize, onClose=False, goodTillCanceled=True)
                 self.__sharesToBuy[instrument] -= orderSize
 
     def _logPosSize(self):
@@ -102,7 +102,7 @@ class MarketTiming(strategy.BacktestingStrategy):
         topByClass = self._getTop()
         for assetClass in topByClass:
             instrument = topByClass[assetClass]
-            self.info("Best for class %s: %s" % (assetClass, instrument))
+            self.info(f"Best for class {assetClass}: {instrument}")
             if instrument is not None:
                 lastPrice = self.getLastPrice(instrument)
                 cashForInstrument = round(cashPerAssetClass - self.getBroker().getShares(instrument) * lastPrice, 2)
@@ -149,7 +149,7 @@ def main(plot):
     for year in range(2007, 2013+1):
         for instrument in instruments:
             fileName = "%s-%d-yahoofinance.csv" % (instrument, year)
-            print("Loading bars from %s" % fileName)
+            print(f"Loading bars from {fileName}")
             feed.addBarsFromCSV(instrument, fileName)
 
     # Build the strategy and attach some metrics.

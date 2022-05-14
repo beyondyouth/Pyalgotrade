@@ -18,7 +18,7 @@
 .. moduleauthor:: Gabriel Martin Becedillas Ruiz <gabriel.becedillas@gmail.com>
 """
 
-from pyalgotrade import dataseries
+from pyalgotrade import dataseries, bar
 
 import six
 
@@ -53,7 +53,7 @@ class BarDataSeries(dataseries.SequenceDataSeries):
     def setUseAdjustedValues(self, useAdjusted):
         self.__useAdjustedValues = useAdjusted
 
-    def append(self, bar):
+    def append(self, bar: bar.BasicBar):
         self.appendWithDateTime(bar.getDateTime(), bar)
 
     def appendWithDateTime(self, dateTime, bar):
@@ -101,10 +101,7 @@ class BarDataSeries(dataseries.SequenceDataSeries):
 
     def getPriceDataSeries(self):
         """Returns a :class:`pyalgotrade.dataseries.DataSeries` with the close or adjusted close prices."""
-        if self.__useAdjustedValues:
-            return self.__adjCloseDS
-        else:
-            return self.__closeDS
+        return self.__adjCloseDS if self.__useAdjustedValues else self.__closeDS
 
     def getExtraDataSeries(self, name):
         """Returns a :class:`pyalgotrade.dataseries.DataSeries` for an extra column."""

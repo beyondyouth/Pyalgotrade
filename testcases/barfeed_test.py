@@ -28,7 +28,7 @@ from pyalgotrade import bar
 from pyalgotrade import dispatcher
 
 
-def check_base_barfeed(testCase, barFeed, barsHaveAdjClose):
+def check_base_barfeed(testCase: common.TestCase, barFeed: barfeed.BaseBarFeed, barsHaveAdjClose: bool):
     called = {"called": True}
 
     def callback(dateTime, bars):

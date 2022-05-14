@@ -44,6 +44,34 @@ class IntegerTraits(InstrumentTraits):
         return int(quantity)
 
 
+class OrderExecutionInfo(object):
+    """Execution information for an order."""
+    def __init__(self, price, quantity, commission, dateTime):
+        self.__price = price
+        self.__quantity = quantity
+        self.__commission = commission
+        self.__dateTime = dateTime
+
+    def __str__(self):
+        return f"{self.__dateTime} - Price: {self.__price} - Amount: {self.__quantity} - Fee: {self.__commission}"
+
+    def getPrice(self):
+        """Returns the fill price."""
+        return self.__price
+
+    def getQuantity(self):
+        """Returns the quantity."""
+        return self.__quantity
+
+    def getCommission(self):
+        """Returns the commission applied."""
+        return self.__commission
+
+    def getDateTime(self):
+        """Returns the :class:`datatime.datetime` when the order was executed."""
+        return self.__dateTime
+
+
 ######################################################################
 # Orders
 # http://stocks.about.com/od/tradingbasics/a/markords.htm
@@ -137,7 +165,7 @@ class Order(object):
         State.PARTIALLY_FILLED: [State.PARTIALLY_FILLED, State.FILLED, State.CANCELED],
     }
 
-    def __init__(self, type_, action, instrument, quantity, instrumentTraits):
+    def __init__(self, type_, action: Action, instrument, quantity, instrumentTraits: InstrumentTraits):
         if quantity is not None and quantity <= 0:
             raise Exception("Invalid quantity")
 
@@ -312,9 +340,10 @@ class Order(object):
             raise Exception("The order has already been submitted")
         self.__allOrNone = allOrNone
 
-    def addExecutionInfo(self, orderExecutionInfo):
+    def addExecutionInfo(self, orderExecutionInfo: OrderExecutionInfo):
         if orderExecutionInfo.getQuantity() > self.getRemaining():
-            raise Exception("Invalid fill size. %s remaining and %s filled" % (self.getRemaining(), orderExecutionInfo.getQuantity()))
+            raise Exception(f"Invalid fill size. {self.getRemaining()} remaining and {orderExecutionInfo.getQuantity()} filled")
+
 
         if self.__avgFillPrice is None:
             self.__avgFillPrice = orderExecutionInfo.getPrice()
@@ -331,14 +360,15 @@ class Order(object):
             assert(not self.__allOrNone)
             self.switchState(Order.State.PARTIALLY_FILLED)
 
-    def switchState(self, newState):
+    def switchState(self, newState: State):
         validTransitions = Order.VALID_TRANSITIONS.get(self.__state, [])
         if newState not in validTransitions:
-            raise Exception("Invalid order state transition from %s to %s" % (Order.State.toString(self.__state), Order.State.toString(newState)))
+            raise Exception(f"Invalid order state transition from {Order.State.toString(self.__state)} to {Order.State.toString(newState)}")
+
         else:
             self.__state = newState
 
-    def setState(self, newState):
+    def setState(self, newState: State):
         self.__state = newState
 
     def getExecutionInfo(self):
@@ -366,7 +396,7 @@ class MarketOrder(Order):
         This is a base class and should not be used directly.
     """
 
-    def __init__(self, action, instrument, quantity, onClose, instrumentTraits):
+    def __init__(self, action, instrument, quantity, onClose, instrumentTraits: InstrumentTraits):
         super(MarketOrder, self).__init__(Order.Type.MARKET, action, instrument, quantity, instrumentTraits)
         self.__onClose = onClose
 
@@ -383,7 +413,7 @@ class LimitOrder(Order):
         This is a base class and should not be used directly.
     """
 
-    def __init__(self, action, instrument, limitPrice, quantity, instrumentTraits):
+    def __init__(self, action: Order.Action, instrument, limitPrice, quantity, instrumentTraits: InstrumentTraits):
         super(LimitOrder, self).__init__(Order.Type.LIMIT, action, instrument, quantity, instrumentTraits)
         self.__limitPrice = limitPrice
 
@@ -400,7 +430,7 @@ class StopOrder(Order):
         This is a base class and should not be used directly.
     """
 
-    def __init__(self, action, instrument, stopPrice, quantity, instrumentTraits):
+    def __init__(self, action: Order.Action, instrument, stopPrice, quantity, instrumentTraits: InstrumentTraits):
         super(StopOrder, self).__init__(Order.Type.STOP, action, instrument, quantity, instrumentTraits)
         self.__stopPrice = stopPrice
 
@@ -417,7 +447,7 @@ class StopLimitOrder(Order):
         This is a base class and should not be used directly.
     """
 
-    def __init__(self, action, instrument, stopPrice, limitPrice, quantity, instrumentTraits):
+    def __init__(self, action: Order.Action, instrument, stopPrice, limitPrice, quantity, instrumentTraits: InstrumentTraits):
         super(StopLimitOrder, self).__init__(Order.Type.STOP_LIMIT, action, instrument, quantity, instrumentTraits)
         self.__stopPrice = stopPrice
         self.__limitPrice = limitPrice
@@ -429,34 +459,6 @@ class StopLimitOrder(Order):
     def getLimitPrice(self):
         """Returns the limit price."""
         return self.__limitPrice
-
-
-class OrderExecutionInfo(object):
-    """Execution information for an order."""
-    def __init__(self, price, quantity, commission, dateTime):
-        self.__price = price
-        self.__quantity = quantity
-        self.__commission = commission
-        self.__dateTime = dateTime
-
-    def __str__(self):
-        return "%s - Price: %s - Amount: %s - Fee: %s" % (self.__dateTime, self.__price, self.__quantity, self.__commission)
-
-    def getPrice(self):
-        """Returns the fill price."""
-        return self.__price
-
-    def getQuantity(self):
-        """Returns the quantity."""
-        return self.__quantity
-
-    def getCommission(self):
-        """Returns the commission applied."""
-        return self.__commission
-
-    def getDateTime(self):
-        """Returns the :class:`datatime.datetime` when the order was executed."""
-        return self.__dateTime
 
 
 class OrderEvent(object):
@@ -561,7 +563,7 @@ class Broker(observer.Subject):
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def createMarketOrder(self, action, instrument, quantity, onClose=False):
+    def createMarketOrder(self, action, instrument, quantity, onClose=True):
         """Creates a Market order.
         A market order is an order to buy or sell a stock at the best available price.
         Generally, this type of order will be executed immediately. However, the price at which a market order will be executed
