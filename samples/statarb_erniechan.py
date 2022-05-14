@@ -99,20 +99,18 @@ class StatArb(strategy.BacktestingStrategy):
 
     def buySpread(self, bars, hedgeRatio):
         amount1, amount2 = self.__getOrderSize(bars, hedgeRatio)
-        self.marketOrder(self.__i1, amount1)
-        self.marketOrder(self.__i2, amount2 * -1)
+        self.marketOrder(self.__i1, amount1, onClose=False)
+        self.marketOrder(self.__i2, amount2 * -1, onClose=False)
 
     def sellSpread(self, bars, hedgeRatio):
         amount1, amount2 = self.__getOrderSize(bars, hedgeRatio)
-        self.marketOrder(self.__i1, amount1 * -1)
-        self.marketOrder(self.__i2, amount2)
+        self.marketOrder(self.__i1, amount1 * -1, onClose=False)
+        self.marketOrder(self.__i2, amount2, onClose=False)
 
     def reducePosition(self, instrument):
         currentPos = self.getBroker().getShares(instrument)
-        if currentPos > 0:
-            self.marketOrder(instrument, currentPos * -1)
-        elif currentPos < 0:
-            self.marketOrder(instrument, currentPos * -1)
+        if currentPos > 0 or currentPos < 0:
+            self.marketOrder(instrument, currentPos * -1, onClose=False)
 
     def onBars(self, bars):
         self.__statArbHelper.update()
@@ -144,7 +142,7 @@ def main(plot):
     for year in range(2006, 2012+1):
         for instrument in instruments:
             fileName = "%s-%d-yahoofinance.csv" % (instrument, year)
-            print("Loading bars from %s" % fileName)
+            print("fLoading bars from {fileName}")
             feed.addBarsFromCSV(instrument, fileName)
 
     strat = StatArb(feed, instruments[0], instruments[1], windowSize)

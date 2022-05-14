@@ -124,7 +124,7 @@ class SharpeRatioTestCase(common.TestCase):
         strat = strategy_test.TestStrategy(barFeed, 1000)
         stratAnalyzer = sharpe.SharpeRatio(False)
         strat.attachAnalyzer(stratAnalyzer)
-        strat.marketOrder("spy", 1)
+        strat.marketOrder("spy", 1, onClose=False)
 
         strat.run()
 

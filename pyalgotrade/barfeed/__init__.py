@@ -43,7 +43,7 @@ class BaseBarFeed(feed.BaseFeed):
         This is a base class and should not be used directly.
     """
 
-    def __init__(self, frequency, maxLen=None):
+    def __init__(self, frequency: Frequency, maxLen=None):
         super(BaseBarFeed, self).__init__(maxLen)
         self.__frequency = frequency
         self.__useAdjustedValues = False
@@ -58,7 +58,8 @@ class BaseBarFeed(feed.BaseFeed):
 
     def setUseAdjustedValues(self, useAdjusted):
         if useAdjusted and not self.barsHaveAdjClose():
-            raise Exception("The barfeed doesn't support adjusted close values")
+            raise Exception(
+                "The barfeed doesn't support adjusted close values")
         # This is to affect future dataseries when they get created.
         self.__useAdjustedValues = useAdjusted
         # Update existing dataseries
@@ -155,7 +156,7 @@ class BaseBarFeed(feed.BaseFeed):
 # This class is used by the optimizer module. The barfeed is already built on the server side,
 # and the bars are sent back to workers.
 class OptimizerBarFeed(BaseBarFeed):
-    def __init__(self, frequency, instruments, bars, maxLen=None):
+    def __init__(self, frequency: Frequency, instruments: list, bars: list[bar.Bars], maxLen=None):
         super(OptimizerBarFeed, self).__init__(frequency, maxLen)
         for instrument in instruments:
             self.registerInstrument(instrument)
@@ -164,7 +165,8 @@ class OptimizerBarFeed(BaseBarFeed):
         self.__currDateTime = None
 
         try:
-            self.__barsHaveAdjClose = self.__bars[0][instruments[0]].getAdjClose() is not None
+            self.__barsHaveAdjClose = self.__bars[0][instruments[0]].getAdjClose(
+            ) is not None
         except Exception:
             self.__barsHaveAdjClose = False
 
@@ -184,10 +186,7 @@ class OptimizerBarFeed(BaseBarFeed):
         pass
 
     def peekDateTime(self):
-        ret = None
-        if self.__nextPos < len(self.__bars):
-            ret = self.__bars[self.__nextPos].getDateTime()
-        return ret
+        return self.__bars[self.__nextPos].getDateTime() if self.__nextPos < len(self.__bars) else None
 
     def getNextBars(self):
         ret = None

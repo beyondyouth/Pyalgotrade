@@ -261,11 +261,12 @@ class DefaultStrategy(FillStrategy):
     def onOrderFilled(self, broker_, order):
         # Update the volume left.
         if self.__volumeLimit is not None:
-            # We round the volume left here becuase it was not rounded when it was initialized.
+            # We round the volume left here because it was not rounded when it was initialized.
             volumeLeft = order.getInstrumentTraits().roundQuantity(self.__volumeLeft[order.getInstrument()])
             fillQuantity = order.getExecutionInfo().getQuantity()
-            assert volumeLeft >= fillQuantity, \
-                "Invalid fill quantity %s. Not enough volume left %s" % (fillQuantity, volumeLeft)
+            assert (
+                volumeLeft >= fillQuantity
+            ), f"Invalid fill quantity {fillQuantity}. Not enough volume left {volumeLeft}"
             self.__volumeLeft[order.getInstrument()] = order.getInstrumentTraits().roundQuantity(
                 volumeLeft - fillQuantity
             )
@@ -346,16 +347,14 @@ class DefaultStrategy(FillStrategy):
         # Calculate the fill size for the order.
         fillSize = self.__calculateFillSize(broker_, order, bar)
         if fillSize == 0:
-            broker_.getLogger().debug("Not enough volume to fill %s limit order [%s] for %s share/s" % (
-                order.getInstrument(), order.getId(), order.getRemaining())
+            broker_.getLogger().debug(
+                f"Not enough volume to fill {order.getInstrument()} limit order [{order.getId()}] for {order.getRemaining()} share/s"
             )
+
             return None
 
-        ret = None
         price = get_limit_price_trigger(order.getAction(), order.getLimitPrice(), broker_.getUseAdjustedValues(), bar)
-        if price is not None:
-            ret = FillInfo(price, fillSize)
-        return ret
+        return FillInfo(price, fillSize) if price is not None else None
 
     def fillStopOrder(self, broker_, order, bar):
         ret = None
