@@ -129,14 +129,15 @@ class BarFeed(membf.BarFeed):
             parse_bar = rowParser.parseBar
 
         # Load the csv file
-        loadedBars = []
-        reader = csvutils.FastDictReader(open(path, "r"), fieldnames=rowParser.getFieldNames(), delimiter=rowParser.getDelimiter())
-        for row in reader:
-            bar_ = parse_bar(row)
-            if bar_ is not None and (self.__barFilter is None or self.__barFilter.includeBar(bar_)):
-                loadedBars.append(bar_)
+        with open(path, "r") as f:
+            loadedBars = []
+            reader = csvutils.FastDictReader(f, fieldnames=rowParser.getFieldNames(), delimiter=rowParser.getDelimiter())
+            for row in reader:
+                bar_ = parse_bar(row)
+                if bar_ is not None and (self.__barFilter is None or self.__barFilter.includeBar(bar_)):
+                    loadedBars.append(bar_)
 
-        self.addBarsFromSequence(instrument, loadedBars)
+            self.addBarsFromSequence(instrument, loadedBars)
 
 
 class GenericRowParser(RowParser):
@@ -192,10 +193,11 @@ class GenericRowParser(RowParser):
                 self.__haveAdjClose = True
 
         # Process extra columns.
-        extra = {}
-        for k, v in six.iteritems(csvRowDict):
-            if k not in self.__columnNames.values():
-                extra[k] = csvutils.float_or_string(v)
+        extra = {
+             k: csvutils.float_or_string(v)
+             for k, v in six.iteritems(csvRowDict)
+             if k not in self.__columnNames.values()
+         }
 
         return self.__barClass(
             dateTime, open_, high, low, close, volume, adjClose, self.__frequency, extra=extra
