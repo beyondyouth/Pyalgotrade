@@ -20,7 +20,7 @@
 
 import datetime
 import math
-from distutils import version
+from packaging import version
 import pytz
 import numpy
 
@@ -108,7 +108,7 @@ class TradesAnalyzerTestCase(common.TestCase):
 
         self.assertTrue(stratAnalyzer.getUnprofitableCount() == 1)
         self.assertTrue(round(stratAnalyzer.getLosses().mean(), 2) == -0.04)
-        if version.LooseVersion(numpy.__version__) >= version.LooseVersion("1.6.2"):
+        if version.Version(numpy.__version__) >= version.Version("1.6.2"):
             self.assertTrue(math.isnan(stratAnalyzer.getLosses().std(ddof=1)))
         else:
             self.assertTrue(stratAnalyzer.getLosses().std(ddof=1) == 0)
@@ -148,7 +148,7 @@ class TradesAnalyzerTestCase(common.TestCase):
 
         self.assertTrue(stratAnalyzer.getUnprofitableCount() == 1)
         self.assertTrue(round(stratAnalyzer.getLosses().mean(), 2) == -0.04)
-        if version.LooseVersion(numpy.__version__) >= version.LooseVersion("1.6.2"):
+        if version.Version(numpy.__version__) >= version.Version("1.6.2"):
             self.assertTrue(math.isnan(stratAnalyzer.getLosses().std(ddof=1)))
         else:
             self.assertTrue(stratAnalyzer.getLosses().std(ddof=1) == 0)
