@@ -320,16 +320,21 @@ class ToolsTestCase(common.TestCase):
         shutil.rmtree(tmpPath)
         try:
             instrument = "AAPL"
-            subprocess.call([
-                "python", "-m", "pyalgotrade.tools.quandl",
-                "--source-code=WIKI",
-                "--table-code=%s" % instrument,
-                "--from-year=2010",
-                "--to-year=2010",
-                f"--storage={tmpPath}",
-                "--frequency=weekly",
-                f"--auth-token={QUANDL_API_KEY}",
-            ])
+            subprocess.call(
+                [
+                    "python",
+                    "-m",
+                    "pyalgotrade.tools.quandl",
+                    "--source-code=WIKI",
+                    f"--table-code={instrument}",
+                    "--from-year=2010",
+                    "--to-year=2010",
+                    f"--storage={tmpPath}",
+                    "--frequency=weekly",
+                    f"--auth-token={QUANDL_API_KEY}",
+                ]
+            )
+
             bf = quandlfeed.Feed()
             bf.addBarsFromCSV(instrument, os.path.join(tmpPath, "WIKI-AAPL-2010-quandl.csv"))
             bf.loadAll()
