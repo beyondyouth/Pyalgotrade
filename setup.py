@@ -65,7 +65,7 @@ setup(
         "scipy",
         "six",
         "tornado",
-        "tweepy",
+        "tweepy>=4.9.0",
         "ws4py>=0.3.4",
     ],
     extras_require={
