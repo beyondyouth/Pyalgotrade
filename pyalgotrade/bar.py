@@ -247,7 +247,7 @@ class Bars(object):
     """
 
     def __init__(self, barDict: dict):
-        if len(barDict) == 0:
+        if not barDict:
             raise Exception("No bars supplied")
 
         # Check that bar datetimes are in sync
@@ -258,12 +258,10 @@ class Bars(object):
                 firstDateTime = currentBar.getDateTime()
                 firstInstrument = instrument
             elif currentBar.getDateTime() != firstDateTime:
-                raise Exception("Bar data times are not in sync. %s %s != %s %s" % (
-                    instrument,
-                    currentBar.getDateTime(),
-                    firstInstrument,
-                    firstDateTime
-                ))
+                raise Exception(
+                    f"Bar data times are not in sync. {instrument} {currentBar.getDateTime()} != {firstInstrument} {firstDateTime}"
+                )
+
 
         self.__barDict = barDict
         self.__dateTime = firstDateTime

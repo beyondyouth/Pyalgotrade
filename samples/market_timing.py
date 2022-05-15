@@ -34,13 +34,15 @@ class MarketTiming(strategy.BacktestingStrategy):
         if len(smas) == 0 or smas[-1] is None or price < smas[-1]:
             return None
 
-        # Rank based on 20 day returns.
-        ret = None
         lookBack = 20
         priceDS = self.getFeed()[instrument].getPriceDataSeries()
-        if len(priceDS) >= lookBack and smas[-1] is not None and smas[-1*lookBack] is not None:
-            ret = (priceDS[-1] - priceDS[-1*lookBack]) / float(priceDS[-1*lookBack])
-        return ret
+        return (
+            (priceDS[-1] - priceDS[-1 * lookBack]) / float(priceDS[-1 * lookBack])
+            if len(priceDS) >= lookBack
+            and smas[-1] is not None
+            and smas[-1 * lookBack] is not None
+            else None
+        )
 
     def _getTopByClass(self, assetClass):
         # Find the instrument with the highest rank.
@@ -72,9 +74,9 @@ class MarketTiming(strategy.BacktestingStrategy):
                 while cost > remainingCash and orderSize > 0:
                     orderSize -= 1
                     cost = orderSize * lastPrice
-                if orderSize > 0:
-                    remainingCash -= cost
-                    assert(remainingCash >= 0)
+            if orderSize > 0:
+                remainingCash -= cost
+                assert(remainingCash >= 0)
 
             if orderSize != 0:
                 self.info("Placing market order for %d %s shares" % (orderSize, instrument))

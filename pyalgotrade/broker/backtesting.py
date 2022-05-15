@@ -273,11 +273,15 @@ class Broker(broker.Broker):
         self.__useAdjustedValues = useAdjusted
 
     def getActiveOrders(self, instrument=None):
-        if instrument is None:
-            ret = list(self.__activeOrders.values())
-        else:
-            ret = [order for order in self.__activeOrders.values() if order.getInstrument() == instrument]
-        return ret
+        return (
+            list(self.__activeOrders.values())
+            if instrument is None
+            else [
+                order
+                for order in self.__activeOrders.values()
+                if order.getInstrument() == instrument
+            ]
+        )
 
     def _getCurrentDateTime(self):
         return self.__barFeed.getCurrentDateTime()
@@ -378,11 +382,9 @@ class Broker(broker.Broker):
             else:
                 assert(False)
         else:
-            self.__logger.debug("Not enough cash to fill %s order [%s] for %s share/s" % (
-                order.getInstrument(),
-                order.getId(),
-                order.getRemaining()
-            ))
+            self.__logger.debug(
+                f"Not enough cash to fill {order.getInstrument()} order [{order.getId()}] for {order.getRemaining()} share/s"
+            )
 
     def submitOrder(self, order):
         if order.isInitial():
