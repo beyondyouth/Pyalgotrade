@@ -130,11 +130,8 @@ class BaseStrategy(object):
             strategyAnalyzer.attached(self)
 
     def getLastPrice(self, instrument):
-        ret = None
         bar = self.getFeed().getLastBar(instrument)
-        if bar is not None:
-            ret = bar.getPrice()
-        return ret
+        return bar.getPrice() if bar is not None else None
 
     def getFeed(self):
         """Returns the :class:`pyalgotrade.barfeed.BaseBarFeed` that this strategy is using."""
@@ -148,7 +145,7 @@ class BaseStrategy(object):
         """Returns the :class:`datetime.datetime` for the current :class:`pyalgotrade.bar.Bars`."""
         return self.__barFeed.getCurrentDateTime()
 
-    def marketOrder(self, instrument, quantity, onClose=False, goodTillCanceled=False, allOrNone=False):
+    def marketOrder(self, instrument, quantity, onClose=True, goodTillCanceled=False, allOrNone=False):
         """Submits a market order.
 
         :param instrument: Instrument identifier.

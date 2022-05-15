@@ -133,15 +133,15 @@ class BasicBar(Bar):
 
     def __init__(self, dateTime, open_, high, low, close, volume, adjClose, frequency, extra={}):
         if high < low:
-            raise Exception("high < low on %s" % (dateTime))
+            raise Exception(f"high < low on {dateTime}")
         elif high < open_:
-            raise Exception("high < open on %s" % (dateTime))
+            raise Exception(f"high < open on {dateTime}")
         elif high < close:
-            raise Exception("high < close on %s" % (dateTime))
+            raise Exception(f"high < close on {dateTime}")
         elif low > open_:
-            raise Exception("low > open on %s" % (dateTime))
+            raise Exception(f"low > open on {dateTime}")
         elif low > close:
-            raise Exception("low > close on %s" % (dateTime))
+            raise Exception(f"low > close on {dateTime}")
 
         self.__dateTime = dateTime
         self.__open = open_
@@ -192,36 +192,32 @@ class BasicBar(Bar):
         return self.__dateTime
 
     def getOpen(self, adjusted=False):
-        if adjusted:
-            if self.__adjClose is None:
-                raise Exception("Adjusted close is missing")
-            return self.__adjClose * self.__open / float(self.__close)
-        else:
+        if not adjusted:
             return self.__open
+        if self.__adjClose is None:
+            raise Exception("Adjusted close is missing")
+        return self.__adjClose * self.__open / float(self.__close)
 
     def getHigh(self, adjusted=False):
-        if adjusted:
-            if self.__adjClose is None:
-                raise Exception("Adjusted close is missing")
-            return self.__adjClose * self.__high / float(self.__close)
-        else:
+        if not adjusted:
             return self.__high
+        if self.__adjClose is None:
+            raise Exception("Adjusted close is missing")
+        return self.__adjClose * self.__high / float(self.__close)
 
     def getLow(self, adjusted=False):
-        if adjusted:
-            if self.__adjClose is None:
-                raise Exception("Adjusted close is missing")
-            return self.__adjClose * self.__low / float(self.__close)
-        else:
+        if not adjusted:
             return self.__low
+        if self.__adjClose is None:
+            raise Exception("Adjusted close is missing")
+        return self.__adjClose * self.__low / float(self.__close)
 
     def getClose(self, adjusted=False):
-        if adjusted:
-            if self.__adjClose is None:
-                raise Exception("Adjusted close is missing")
-            return self.__adjClose
-        else:
+        if not adjusted:
             return self.__close
+        if self.__adjClose is None:
+            raise Exception("Adjusted close is missing")
+        return self.__adjClose
 
     def getVolume(self):
         return self.__volume
@@ -233,10 +229,7 @@ class BasicBar(Bar):
         return self.__frequency
 
     def getPrice(self):
-        if self.__useAdjustedValue:
-            return self.__adjClose
-        else:
-            return self.__close
+        return self.__adjClose if self.__useAdjustedValue else self.__close
 
     def getExtraColumns(self):
         return self.__extra
@@ -253,7 +246,7 @@ class Bars(object):
         All bars must have the same datetime.
     """
 
-    def __init__(self, barDict):
+    def __init__(self, barDict: dict):
         if len(barDict) == 0:
             raise Exception("No bars supplied")
 

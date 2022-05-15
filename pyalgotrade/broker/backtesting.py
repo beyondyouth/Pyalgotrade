@@ -19,10 +19,11 @@
 """
 
 import abc
+from ctypes import Union
 
 import six
 
-from pyalgotrade import broker
+from pyalgotrade import broker, bar
 from pyalgotrade.broker import fillstrategy
 from pyalgotrade import logger
 import pyalgotrade.bar
@@ -71,12 +72,9 @@ class FixedPerTrade(Commission):
         super(FixedPerTrade, self).__init__()
         self.__amount = amount
 
-    def calculate(self, order, price, quantity):
-        ret = 0
+    def calculate(self, order: broker.Order, price, quantity):
         # Only charge the first fill.
-        if order.getExecutionInfo() is None:
-            ret = self.__amount
-        return ret
+        return self.__amount if order.getExecutionInfo() is None else 0
 
 
 class TradePercentage(Commission):
@@ -186,10 +184,7 @@ class Broker(broker.Broker):
 
         assert(cash >= 0)
         self.__cash = cash
-        if commission is None:
-            self.__commission = NoCommission()
-        else:
-            self.__commission = commission
+        self.__commission = NoCommission() if commission is None else commission
         self.__shares = {}
         self.__instrumentPrice = {}  # Used by setShares
         self.__activeOrders = {}
@@ -313,17 +308,13 @@ class Broker(broker.Broker):
         return [instrument for instrument, shares in six.iteritems(self.__shares) if shares != 0]
 
     def _getPriceForInstrument(self, instrument):
-        ret = None
-
         # Try gettting the price from the last bar first.
         lastBar = self.__barFeed.getLastBar(instrument)
         if lastBar is not None:
-            ret = lastBar.getPrice()
+            return lastBar.getPrice()
         else:
             # Try using the instrument price set by setShares if its available.
-            ret = self.__instrumentPrice.get(instrument)
-
-        return ret
+            return self.__instrumentPrice.get(instrument)
 
     def getEquity(self):
         """Returns the portfolio value (cash + shares * price)."""
@@ -331,12 +322,12 @@ class Broker(broker.Broker):
         ret = self.getCash()
         for instrument, shares in six.iteritems(self.__shares):
             instrumentPrice = self._getPriceForInstrument(instrument)
-            assert instrumentPrice is not None, "Price for %s is missing" % instrument
+            assert instrumentPrice is not None, f"Price for {instrument} is missing"
             ret += instrumentPrice * shares
         return ret
 
     # Tries to commit an order execution.
-    def commitOrderExecution(self, order, dateTime, fillInfo):
+    def commitOrderExecution(self, order: broker.Order, dateTime, fillInfo: broker.OrderExecutionInfo):
         price = fillInfo.getPrice()
         quantity = fillInfo.getQuantity()
 
@@ -446,7 +437,7 @@ class Broker(broker.Broker):
         if order.isActive():
             self.__postProcessOrder(order, bar_)
 
-    def __onBarsImpl(self, order, bars):
+    def __onBarsImpl(self, order, bars: bar.Bars):
         # IF WE'RE DEALING WITH MULTIPLE INSTRUMENTS WE SKIP ORDER PROCESSING IF THERE IS NO BAR FOR THE ORDER'S
         # INSTRUMENT TO GET THE SAME BEHAVIOUR AS IF WERE BE PROCESSING ONLY ONE INSTRUMENT.
         bar_ = bars.getBar(order.getInstrument())
@@ -500,7 +491,7 @@ class Broker(broker.Broker):
     def peekDateTime(self):
         return None
 
-    def createMarketOrder(self, action, instrument, quantity, onClose=False):
+    def createMarketOrder(self, action, instrument, quantity, onClose=True):
         # In order to properly support market-on-close with intraday feeds I'd need to know about different
         # exchange/market trading hours and support specifying routing an order to a specific exchange/market.
         # Even if I had all this in place it would be a problem while paper-trading with a live feed since

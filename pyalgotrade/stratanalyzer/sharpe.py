@@ -27,8 +27,7 @@ import math
 
 def days_traded(begin, end):
     delta = end - begin
-    ret = delta.days + 1
-    return ret
+    return delta.days + 1
 
 
 # :param returns: The returns.
@@ -50,7 +49,7 @@ def sharpe_ratio(returns, riskFreeRate, tradingPeriods, annualized=True):
         ret = avgExcessReturns / volatility
 
         if annualized:
-            ret = ret * math.sqrt(tradingPeriods)
+            ret *= math.sqrt(tradingPeriods)
     return ret
 
 
@@ -67,7 +66,7 @@ def sharpe_ratio_2(returns, riskFreeRate, firstDateTime, lastDateTime, annualize
     volatility = stats.stddev(returns, 1)
 
     if volatility != 0:
-        # We use 365 instead of 252 becuase we wan't the diff from 1/1/xxxx to 12/31/xxxx to be 1 year.
+        # We use 365 instead of 252 because we wan't the diff from 1/1/xxxx to 12/31/xxxx to be 1 year.
         yearsTraded = days_traded(firstDateTime, lastDateTime) / 365.0
 
         riskFreeRateForPeriod = riskFreeRate * yearsTraded
@@ -76,7 +75,7 @@ def sharpe_ratio_2(returns, riskFreeRate, firstDateTime, lastDateTime, annualize
         avgExcessReturns = stats.mean(returns) - rfPerReturn
         ret = avgExcessReturns / volatility
         if annualized:
-            ret = ret * math.sqrt(len(returns) / yearsTraded)
+            ret *= math.sqrt(len(returns) / yearsTraded)
     return ret
 
 
@@ -136,7 +135,6 @@ class SharpeRatio(stratanalyzer.StrategyAnalyzer):
             raise Exception("tradingPeriods parameter is not supported anymore.")
 
         if self.__useDailyReturns:
-            ret = sharpe_ratio(self.__returns, riskFreeRate, 252, annualized)
+            return sharpe_ratio(self.__returns, riskFreeRate, 252, annualized)
         else:
-            ret = sharpe_ratio_2(self.__returns, riskFreeRate, self.__firstDateTime, self.__lastDateTime, annualized)
-        return ret
+            return sharpe_ratio_2(self.__returns, riskFreeRate, self.__firstDateTime, self.__lastDateTime, annualized)
