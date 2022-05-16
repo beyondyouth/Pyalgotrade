@@ -23,7 +23,7 @@ from ctypes import Union
 
 import six
 
-from pyalgotrade import broker, bar
+from pyalgotrade import broker, bar, barfeed
 from pyalgotrade.broker import fillstrategy
 from pyalgotrade import logger
 import pyalgotrade.bar
@@ -116,6 +116,9 @@ class MarketOrder(broker.MarketOrder, BacktestingOrder):
         super(MarketOrder, self).__init__(action, instrument, quantity, onClose, instrumentTraits)
 
     def process(self, broker_, bar_):
+        """
+        backtesting.Broker
+        """
         return broker_.getFillStrategy().fillMarketOrder(broker_, self, bar_)
 
 
@@ -172,14 +175,14 @@ class Broker(broker.Broker):
     :param cash: The initial amount of cash.
     :type cash: int/float.
     :param barFeed: The bar feed that will provide the bars.
-    :type barFeed: :class:`pyalgotrade.barfeed.BarFeed`
+    :type barFeed: :class:`pyalgotrade.barfeed.BaseBarFeed`
     :param commission: An object responsible for calculating order commissions.
     :type commission: :class:`Commission`
     """
 
     LOGGER_NAME = "broker.backtesting"
 
-    def __init__(self, cash, barFeed, commission=None):
+    def __init__(self, cash, barFeed: barfeed.BaseBarFeed, commission=None):
         super(Broker, self).__init__()
 
         assert(cash >= 0)

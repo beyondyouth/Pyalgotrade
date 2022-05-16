@@ -33,7 +33,7 @@ class Results(object):
         assert(lookForward > 0)
         self.__lookBack = lookBack
         self.__lookForward = lookForward
-        self.__values = [[] for i in xrange(lookBack+lookForward+1)]
+        self.__values = [[] for _ in xrange(lookBack+lookForward+1)]
         self.__eventCount = 0
 
         # Process events.
@@ -189,7 +189,7 @@ class Profiler(object):
         """Runs the analysis using the bars supplied by the feed.
 
         :param barFeed: The bar feed to use to run the analysis.
-        :type barFeed: :class:`pyalgotrade.barfeed.BarFeed`.
+        :type barFeed: :class:`pyalgotrade.barfeed.BaseBarFeed`.
         :param useAdjustedCloseForReturns: True if adjusted close values should be used to calculate returns.
         :type useAdjustedCloseForReturns: boolean.
         """

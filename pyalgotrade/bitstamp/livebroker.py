@@ -38,7 +38,7 @@ def build_order_from_open_order(openOrder, instrumentTraits):
 
     ret = broker.LimitOrder(action, common.btc_symbol, openOrder.getPrice(
     ), openOrder.getAmount(), instrumentTraits)
-    ret.setSubmitted(openOrder.getId(), openOrder.getDateTime())
+    ret.setSubmitted(openOrder.getId(), openOrder.getDateTime(), openOrder.getPrice())
     ret.setState(broker.Order.State.ACCEPTED)
     return ret
 
