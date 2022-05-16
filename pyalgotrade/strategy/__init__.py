@@ -25,6 +25,7 @@ import six
 
 import pyalgotrade.broker
 from pyalgotrade.broker import backtesting
+from pyalgotrade import barfeed
 from pyalgotrade import observer
 from pyalgotrade import dispatcher
 import pyalgotrade.strategy.position
@@ -47,7 +48,7 @@ class BaseStrategy(object):
 
     LOGGER_NAME = "strategy"
 
-    def __init__(self, barFeed, broker):
+    def __init__(self, barFeed: barfeed.BaseBarFeed, broker: backtesting.Broker):
         self.__barFeed = barFeed
         self.__broker = broker
         self.__activePositions = set()
@@ -481,7 +482,7 @@ class BaseStrategy(object):
 
         self.onIdle()
 
-    def __onOrderEvent(self, broker_, orderEvent):
+    def __onOrderEvent(self, broker_, orderEvent: pyalgotrade.broker.OrderEvent):
         order = orderEvent.getOrder()
         self.onOrderUpdated(order)
 

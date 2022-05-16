@@ -21,6 +21,7 @@
 import pyalgotrade.logger
 from pyalgotrade.optimizer import base
 from pyalgotrade.optimizer import xmlrpcserver
+from pyalgotrade import barfeed
 
 logger = pyalgotrade.logger.getLogger(__name__)
 
@@ -40,11 +41,11 @@ class Results(object):
         return self.__result
 
 
-def serve(barFeed, strategyParameters, address, port, batchSize=200):
+def serve(barFeed: barfeed.BaseBarFeed, strategyParameters, address, port, batchSize=200):
     """Executes a server that will provide bars and strategy parameters for workers to use.
 
     :param barFeed: The bar feed that each worker will use to backtest the strategy.
-    :type barFeed: :class:`pyalgotrade.barfeed.BarFeed`.
+    :type barFeed: :class:`pyalgotrade.barfeed.BaseBarFeed`.
     :param strategyParameters: The set of parameters to use for backtesting. An iterable object where **each element is a tuple that holds parameter values**.
     :param address: The address to listen for incoming worker connections.
     :type address: string.
@@ -65,7 +66,7 @@ def serve(barFeed, strategyParameters, address, port, batchSize=200):
     ret = None
     bestResult, bestParameters = resultSinc.getBest()
     if bestResult is not None:
-        logger.info("Best final result %s with parameters %s" % (bestResult, bestParameters.args))
+        logger.info(f"Best final result {bestResult} with parameters {bestParameters.args}")
         ret = Results(bestParameters.args, bestResult)
     else:
         logger.error("No results. All jobs failed or no jobs were processed.")
