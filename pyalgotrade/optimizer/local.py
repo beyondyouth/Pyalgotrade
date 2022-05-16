@@ -109,11 +109,13 @@ def run_impl(strategyClass, barFeed, strategyParameters, batchSize, workerCount=
     try:
         logger.info(f"Starting {workerCount} workers")
         # Build the worker processes.
-        for _ in range(workerCount):
-            workers.append(multiprocessing.Process(
-                target=worker_process,
-                args=(strategyClass, port, logLevel))
+        workers.extend(
+            multiprocessing.Process(
+                target=worker_process, args=(strategyClass, port, logLevel)
             )
+            for _ in range(workerCount)
+        )
+
         # Start workers
         for process in workers:
             process.start()

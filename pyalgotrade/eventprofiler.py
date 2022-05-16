@@ -170,8 +170,9 @@ class Profiler(object):
     def __onBars(self, dateTime, bars):
         for instrument in bars.getInstruments():
             self.__addCurrentReturns(instrument)
-            eventOccurred = self.__predicate.eventOccurred(instrument, self.__feed[instrument])
-            if eventOccurred:
+            if eventOccurred := self.__predicate.eventOccurred(
+                instrument, self.__feed[instrument]
+            ):
                 event = Event(self.__lookBack, self.__lookForward)
                 self.__events[instrument].append(event)
                 self.__addPastReturns(instrument, event)
