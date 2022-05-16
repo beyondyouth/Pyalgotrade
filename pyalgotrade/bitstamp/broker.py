@@ -19,7 +19,7 @@
 """
 
 
-from pyalgotrade import broker
+from pyalgotrade import broker, barfeed
 from pyalgotrade.broker import backtesting
 from pyalgotrade.bitstamp import common
 from pyalgotrade.bitstamp import livebroker
@@ -41,7 +41,7 @@ class BacktestingBroker(backtesting.Broker):
     :param cash: The initial amount of cash.
     :type cash: int/float.
     :param barFeed: The bar feed that will provide the bars.
-    :type barFeed: :class:`pyalgotrade.barfeed.BarFeed`
+    :type barFeed: :class:`pyalgotrade.barfeed.BaseBarFeed`
     :param fee: The fee percentage for each order. Defaults to 0.25%.
     :type fee: float.
 
@@ -52,7 +52,7 @@ class BacktestingBroker(backtesting.Broker):
         * SELL_SHORT orders are mapped to SELL orders.
     """
 
-    def __init__(self, cash, barFeed, fee=0.0025):
+    def __init__(self, cash, barFeed: barfeed.BaseBarFeed, fee=0.0025):
         commission = backtesting.TradePercentage(fee)
         super(BacktestingBroker, self).__init__(cash, barFeed, commission)
 
@@ -109,7 +109,7 @@ class PaperTradingBroker(BacktestingBroker):
     :param cash: The initial amount of cash.
     :type cash: int/float.
     :param barFeed: The bar feed that will provide the bars.
-    :type barFeed: :class:`pyalgotrade.barfeed.BarFeed`
+    :type barFeed: :class:`pyalgotrade.barfeed.BaseBarFeed`
     :param fee: The fee percentage for each order. Defaults to 0.5%.
     :type fee: float.
 

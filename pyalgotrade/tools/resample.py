@@ -90,7 +90,7 @@ def resample_to_csv(barFeed, frequency, csvFile):
 
 
     :param barFeed: The bar feed that will provide the bars. It should only hold bars from a single instrument.
-    :type barFeed: :class:`pyalgotrade.barfeed.BarFeed`
+    :type barFeed: :class:`pyalgotrade.barfeed.BaseBarFeed`
     :param frequency: The grouping frequency in seconds. Must be > 0.
     :param csvFile: The path to the CSV file to write.
     :type csvFile: string.

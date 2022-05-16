@@ -90,7 +90,7 @@ class USEquitiesRTH(DateRangeFilter):
 
 
 class BarFeed(membf.BarFeed):
-    """Base class for CSV file based :class:`pyalgotrade.barfeed.BarFeed`.
+    """Base class for CSV file based :class:`pyalgotrade.barfeed.BaseBarFeed`.
 
     .. note::
         This is a base class and should not be used directly.
