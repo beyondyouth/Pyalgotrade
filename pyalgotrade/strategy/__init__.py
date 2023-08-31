@@ -167,10 +167,22 @@ class BaseStrategy(object):
             ret = self.getBroker().createMarketOrder(pyalgotrade.broker.Order.Action.BUY, instrument, quantity, onClose)
         elif quantity < 0:
             ret = self.getBroker().createMarketOrder(pyalgotrade.broker.Order.Action.SELL, instrument, quantity*-1, onClose)
+        print("------00------")
+        print(ret)
         if ret:
+            print("------000-----")
             ret.setGoodTillCanceled(goodTillCanceled)
             ret.setAllOrNone(allOrNone)
+            bar_ = self.getFeed().getLastBar(instrument)
+            fillInfo = ret.process(self.getBroker(), bar_)
+            print(fillInfo.__dict__)
+            if fillInfo is not None:
+                self.getBroker().commitOrderExecution(ret, bar_.getDateTime(), fillInfo)
+            print(ret.isFilled())
+            print(ret.isPartiallyFilled())
+            print("-----0-----")
             self.getBroker().submitOrder(ret)
+            
         return ret
 
     def limitOrder(self, instrument, limitPrice, quantity, goodTillCanceled=False, allOrNone=False):

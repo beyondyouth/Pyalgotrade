@@ -2604,3 +2604,77 @@ class StopLimitOrderTestCase(BaseTestCase):
         self.assertTrue(order.getExecutionInfo().getPrice() == 8)
         self.assertEqual(order.getFilled(), 1)
         self.assertEqual(order.getRemaining(), 0)
+
+    def testTemp(self):
+        barFeed = self.buildBarFeed(BaseTestCase.TestInstrument, bar.Frequency.DAY)
+        brk = self.buildBroker(11, barFeed)
+
+        # Buy
+        # cb = OrderUpdateCallback(brk)
+        # order = brk.createMarketOrder(broker.Order.Action.BUY, BaseTestCase.TestInstrument, 1, onClose=True)
+        # self.assertEqual(order.getSubmitDateTime(), None)
+        # brk.submitOrder(order)
+        # self.assertEqual(order.getSubmitDateTime(), barFeed.getCurrentDateTime())
+        # self.assertEqual(order.getFilled(), 0)
+        # self.assertEqual(order.getRemaining(), 1)
+        # barFeed.dispatchBars(10, 15, 8, 12)
+        # self.assertTrue(order.isFilled())
+        # self.assertEqual(order.getAvgFillPrice(), 10)
+        # self.assertTrue(order.getExecutionInfo().getPrice() == 10)
+        # self.assertTrue(order.getExecutionInfo().getCommission() == 0)
+        # self.assertTrue(len(brk.getActiveOrders()) == 0)
+        # self.assertTrue(brk.getCash() == 1)
+        # self.assertTrue(brk.getShares(BaseTestCase.TestInstrument) == 1)
+        # self.assertEqual(cb.eventCount, 3)
+        # self.assertEqual(order.getFilled(), 1)
+        # self.assertEqual(order.getRemaining(), 0)
+
+        # Sell
+        # cb = OrderUpdateCallback(brk)
+        # order = brk.createMarketOrder(broker.Order.Action.SELL, BaseTestCase.TestInstrument, 1, onClose=True)
+        # self.assertEqual(order.getFilled(), 0)
+        # self.assertEqual(order.getRemaining(), 1)
+        # self.assertEqual(order.getSubmitDateTime(), None)
+        # brk.submitOrder(order)
+        # self.assertEqual(order.getSubmitDateTime(), barFeed.getCurrentDateTime())
+        # barFeed.dispatchBars(10, 15, 8, 12)
+        # self.assertTrue(order.isFilled())
+        # self.assertEqual(order.getAvgFillPrice(), 10)
+        # self.assertTrue(order.getExecutionInfo().getPrice() == 10)
+        # self.assertTrue(order.getExecutionInfo().getCommission() == 0)
+        # self.assertTrue(len(brk.getActiveOrders()) == 0)
+        # self.assertTrue(brk.getCash() == 11)
+        # self.assertTrue(brk.getShares(BaseTestCase.TestInstrument) == 0)
+        # self.assertEqual(cb.eventCount, 3)
+        # self.assertEqual(order.getFilled(), 1)
+        # self.assertEqual(order.getRemaining(), 0)
+
+    
+    def testTemp3(self):
+        barFeed = self.buildBarFeed(BaseTestCase.TestInstrument, bar.Frequency.DAY)
+        cash = 1000000
+        brk = backtesting.Broker(cash, barFeed)
+
+        # Buy
+        order = brk.createMarketOrder(broker.Order.Action.BUY, BaseTestCase.TestInstrument, 2, onClose=True)
+        self.assertEqual(order.getSubmitDateTime(), None)
+        bar_ = bar.BasicBar(None, 12, 15, 8, 14, 10, 14, bar.Frequency.DAY)
+        fillInfo = order.process(brk, bar_)
+        print(fillInfo)
+        # print(fillInfo.__dict__)
+        if fillInfo is not None:
+            brk.commitOrderExecution(order, bar_.getDateTime(), fillInfo)
+        # order.addExecutionInfo()
+        brk.submitOrder(order)
+
+        # 2 should get filled at the closing price.
+        barFeed.dispatchBars(12, 15, 8, 14, 10)
+        self.assertTrue(order.isFilled())
+        self.assertEqual(order.getFilled(), 2)
+        self.assertEqual(order.getRemaining(), 0)
+        self.assertEqual(order.getAvgFillPrice(), 14)
+        print(brk.getCash())
+        print(brk.getShares(BaseTestCase.TestInstrument))
+        print(brk.getEquity())
+        self.assertEqual(order.getExecutionInfo().getPrice(), 14)
+        self.assertEqual(order.getExecutionInfo().getQuantity(), 2)

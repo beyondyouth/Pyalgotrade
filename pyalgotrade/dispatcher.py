@@ -48,7 +48,7 @@ class Dispatcher(object):
     def getSubjects(self):
         return self.__subjects
 
-    def addSubject(self, subject):
+    def addSubject(self, subject: observer.Subject):
         # Skip the subject if it was already added.
         if subject in self.__subjects:
             return
@@ -68,7 +68,7 @@ class Dispatcher(object):
         subject.onDispatcherRegistered(self)
 
     # Return True if events were dispatched.
-    def __dispatchSubject(self, subject, currEventDateTime):
+    def __dispatchSubject(self, subject: observer.Subject, currEventDateTime):
         ret = False
         # Dispatch if the datetime is currEventDateTime of if its a realtime subject.
         if not subject.eof() and subject.peekDateTime() in (None, currEventDateTime):

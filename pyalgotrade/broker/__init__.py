@@ -19,6 +19,7 @@
 """
 
 import abc
+from pickle import STOP
 
 import six
 
@@ -127,11 +128,11 @@ class Order(object):
 
     class State(object):
         INITIAL = 1  # Initial state.
-        SUBMITTED = 2  # Order has been submitted.
-        ACCEPTED = 3  # Order has been acknowledged by the broker.
-        CANCELED = 4  # Order has been canceled.
-        PARTIALLY_FILLED = 5  # Order has been partially filled.
-        FILLED = 6  # Order has been completely filled.
+        PARTIALLY_FILLED = 2  # Order has been partially filled.
+        FILLED = 3  # Order has been completely filled.
+        SUBMITTED = 4  # Order has been submitted.
+        ACCEPTED = 5  # Order has been acknowledged by the broker.
+        CANCELED = 6  # Order has been canceled.
 
         @classmethod
         def toString(cls, state):
@@ -159,10 +160,11 @@ class Order(object):
 
     # Valid state transitions.
     VALID_TRANSITIONS = {
-        State.INITIAL: [State.SUBMITTED, State.CANCELED],
+        State.INITIAL: [State.PARTIALLY_FILLED, State.FILLED, State.CANCELED],
+        State.PARTIALLY_FILLED: [State.PARTIALLY_FILLED, State.FILLED, State.SUBMITTED, State.CANCELED],
+        State.FILLED: [State.SUBMITTED, State.CANCELED],
         State.SUBMITTED: [State.ACCEPTED, State.CANCELED],
-        State.ACCEPTED: [State.PARTIALLY_FILLED, State.FILLED, State.CANCELED],
-        State.PARTIALLY_FILLED: [State.PARTIALLY_FILLED, State.FILLED, State.CANCELED],
+        State.ACCEPTED: [State.CANCELED],
     }
 
     def __init__(self, type_, action: Action, instrument, quantity, instrumentTraits: InstrumentTraits):
@@ -257,7 +259,7 @@ class Order(object):
 
     def isActive(self):
         """Returns True if the order is active."""
-        return self.__state not in [Order.State.CANCELED, Order.State.FILLED]
+        return self.__state not in [Order.State.CANCELED]
 
     def isInitial(self):
         """Returns True if the order state is Order.State.INITIAL."""

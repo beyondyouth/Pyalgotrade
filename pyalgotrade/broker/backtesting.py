@@ -93,80 +93,6 @@ class TradePercentage(Commission):
 
 
 ######################################################################
-# Orders
-
-class BacktestingOrder(object):
-    def __init__(self, *args, **kwargs):
-        self.__accepted = None
-
-    def setAcceptedDateTime(self, dateTime):
-        self.__accepted = dateTime
-
-    def getAcceptedDateTime(self):
-        return self.__accepted
-
-    # Override to call the fill strategy using the concrete order type.
-    # return FillInfo or None if the order should not be filled.
-    def process(self, broker_, bar_):
-        raise NotImplementedError()
-
-
-class MarketOrder(broker.MarketOrder, BacktestingOrder):
-    def __init__(self, action, instrument, quantity, onClose, instrumentTraits):
-        super(MarketOrder, self).__init__(action, instrument, quantity, onClose, instrumentTraits)
-
-    def process(self, broker_, bar_):
-        """
-        backtesting.Broker
-        """
-        return broker_.getFillStrategy().fillMarketOrder(broker_, self, bar_)
-
-
-class LimitOrder(broker.LimitOrder, BacktestingOrder):
-    def __init__(self, action, instrument, limitPrice, quantity, instrumentTraits):
-        super(LimitOrder, self).__init__(action, instrument, limitPrice, quantity, instrumentTraits)
-
-    def process(self, broker_, bar_):
-        return broker_.getFillStrategy().fillLimitOrder(broker_, self, bar_)
-
-
-class StopOrder(broker.StopOrder, BacktestingOrder):
-    def __init__(self, action, instrument, stopPrice, quantity, instrumentTraits):
-        super(StopOrder, self).__init__(action, instrument, stopPrice, quantity, instrumentTraits)
-        self.__stopHit = False
-
-    def process(self, broker_, bar_):
-        return broker_.getFillStrategy().fillStopOrder(broker_, self, bar_)
-
-    def setStopHit(self, stopHit):
-        self.__stopHit = stopHit
-
-    def getStopHit(self):
-        return self.__stopHit
-
-
-# http://www.sec.gov/answers/stoplim.htm
-# http://www.interactivebrokers.com/en/trading/orders/stopLimit.php
-class StopLimitOrder(broker.StopLimitOrder, BacktestingOrder):
-    def __init__(self, action, instrument, stopPrice, limitPrice, quantity, instrumentTraits):
-        super(StopLimitOrder, self).__init__(action, instrument, stopPrice, limitPrice, quantity, instrumentTraits)
-        self.__stopHit = False  # Set to true when the limit order is activated (stop price is hit)
-
-    def setStopHit(self, stopHit):
-        self.__stopHit = stopHit
-
-    def getStopHit(self):
-        return self.__stopHit
-
-    def isLimitOrderActive(self):
-        # TODO: Deprecated since v0.15. Use getStopHit instead.
-        return self.__stopHit
-
-    def process(self, broker_, bar_):
-        return broker_.getFillStrategy().fillStopLimitOrder(broker_, self, bar_)
-
-
-######################################################################
 # Broker
 
 class Broker(broker.Broker):
@@ -207,7 +133,7 @@ class Broker(broker.Broker):
         self.__nextOrderId += 1
         return ret
 
-    def _getBar(self, bars, instrument):
+    def _getBar(self, bars: bar.Bars, instrument):
         ret = bars.getBar(instrument)
         if ret is None:
             ret = self.__barFeed.getLastBar(instrument)
@@ -372,7 +298,8 @@ class Broker(broker.Broker):
 
             # Notify the order update
             if order.isFilled():
-                self._unregisterOrder(order)
+            #     self._unregisterOrder(order)
+                print(orderExecutionInfo.__dict__)
                 self.notifyOrderEvent(broker.OrderEvent(order, broker.OrderEvent.Type.FILLED, orderExecutionInfo))
             elif order.isPartiallyFilled():
                 self.notifyOrderEvent(
@@ -387,18 +314,21 @@ class Broker(broker.Broker):
                 order.getRemaining()
             ))
 
-    def submitOrder(self, order):
-        if order.isInitial():
+    def submitOrder(self, order: broker.Order):
+        if order.isFilled() or order.isPartiallyFilled():
+            print("----1----")
+            
             order.setSubmitted(self._getNextOrderId(), self._getCurrentDateTime())
+            print(order.getId())
             self._registerOrder(order)
             # Switch from INITIAL -> SUBMITTED
             order.switchState(broker.Order.State.SUBMITTED)
             self.notifyOrderEvent(broker.OrderEvent(order, broker.OrderEvent.Type.SUBMITTED, None))
         else:
-            raise Exception("The order was already processed")
+            raise Exception("The order have not be filled")
 
     # Return True if further processing is needed.
-    def __preProcessOrder(self, order, bar_):
+    def __preProcessOrder(self, order, bar_: bar.BasicBar):
         ret = True
 
         # For non-GTC orders we need to check if the order has expired.
@@ -414,7 +344,7 @@ class Broker(broker.Broker):
 
         return ret
 
-    def __postProcessOrder(self, order, bar_):
+    def __postProcessOrder(self, order, bar_: bar.BasicBar):
         # For non-GTC orders and daily (or greater) bars we need to check if orders should expire right now
         # before waiting for the next bar.
         if not order.getGoodTillCanceled():
@@ -428,12 +358,13 @@ class Broker(broker.Broker):
                 order.switchState(broker.Order.State.CANCELED)
                 self.notifyOrderEvent(broker.OrderEvent(order, broker.OrderEvent.Type.CANCELED, "Expired"))
 
-    def __processOrder(self, order, bar_):
+    def __processOrder(self, order, bar_: bar.BasicBar):
         if not self.__preProcessOrder(order, bar_):
             return
 
         # Double dispatch to the fill strategy using the concrete order type.
         fillInfo = order.process(self, bar_)
+        # print(order.__dict__)
         if fillInfo is not None:
             self.commitOrderExecution(order, bar_.getDateTime(), fillInfo)
 
@@ -449,18 +380,16 @@ class Broker(broker.Broker):
             if order.isSubmitted():
                 order.setAcceptedDateTime(bar_.getDateTime())
                 order.switchState(broker.Order.State.ACCEPTED)
+                # print(order.__dict__)
                 self.notifyOrderEvent(broker.OrderEvent(order, broker.OrderEvent.Type.ACCEPTED, None))
 
-            if order.isActive():
-                # This may trigger orders to be added/removed from __activeOrders.
-                self.__processOrder(order, bar_)
-            else:
+            if not order.isActive():
                 # If an order is not active it should be because it was canceled in this same loop and it should
                 # have been removed.
                 assert(order.isCanceled())
                 assert(order not in self.__activeOrders)
 
-    def onBars(self, dateTime, bars):
+    def onBars(self, dateTime, bars: bar.Bars):
         # Let the fill strategy know that new bars are being processed.
         self.__fillStrategy.onBars(self, bars)
 
@@ -525,3 +454,77 @@ class Broker(broker.Broker):
         self.notifyOrderEvent(
             broker.OrderEvent(activeOrder, broker.OrderEvent.Type.CANCELED, "User requested cancellation")
         )
+
+
+######################################################################
+# Orders
+
+class BacktestingOrder(object):
+    def __init__(self, *args, **kwargs):
+        self.__accepted = None
+
+    def setAcceptedDateTime(self, dateTime):
+        self.__accepted = dateTime
+
+    def getAcceptedDateTime(self):
+        return self.__accepted
+
+    # Override to call the fill strategy using the concrete order type.
+    # return FillInfo or None if the order should not be filled.
+    def process(self, broker_: Broker, bar_):
+        raise NotImplementedError()
+
+
+class MarketOrder(broker.MarketOrder, BacktestingOrder):
+    def __init__(self, action, instrument, quantity, onClose: bool, instrumentTraits: broker.InstrumentTraits):
+        super(MarketOrder, self).__init__(action, instrument, quantity, onClose, instrumentTraits)
+
+    def process(self, broker_: Broker, bar_: bar.BasicBar):
+        """
+        backtesting.Broker
+        """
+        return broker_.getFillStrategy().fillMarketOrder(broker_, self, bar_)
+
+
+class LimitOrder(broker.LimitOrder, BacktestingOrder):
+    def __init__(self, action, instrument, limitPrice, quantity, instrumentTraits: broker.InstrumentTraits):
+        super(LimitOrder, self).__init__(action, instrument, limitPrice, quantity, instrumentTraits)
+
+    def process(self, broker_: Broker, bar_):
+        return broker_.getFillStrategy().fillLimitOrder(broker_, self, bar_)
+
+
+class StopOrder(broker.StopOrder, BacktestingOrder):
+    def __init__(self, action, instrument, stopPrice, quantity, instrumentTraits: broker.InstrumentTraits):
+        super(StopOrder, self).__init__(action, instrument, stopPrice, quantity, instrumentTraits)
+        self.__stopHit = False
+
+    def process(self, broker_: Broker, bar_):
+        return broker_.getFillStrategy().fillStopOrder(broker_, self, bar_)
+
+    def setStopHit(self, stopHit):
+        self.__stopHit = stopHit
+
+    def getStopHit(self):
+        return self.__stopHit
+
+
+# http://www.sec.gov/answers/stoplim.htm
+# http://www.interactivebrokers.com/en/trading/orders/stopLimit.php
+class StopLimitOrder(broker.StopLimitOrder, BacktestingOrder):
+    def __init__(self, action, instrument, stopPrice, limitPrice, quantity, instrumentTraits: broker.InstrumentTraits):
+        super(StopLimitOrder, self).__init__(action, instrument, stopPrice, limitPrice, quantity, instrumentTraits)
+        self.__stopHit = False  # Set to true when the limit order is activated (stop price is hit)
+
+    def setStopHit(self, stopHit):
+        self.__stopHit = stopHit
+
+    def getStopHit(self):
+        return self.__stopHit
+
+    def isLimitOrderActive(self):
+        # TODO: Deprecated since v0.15. Use getStopHit instead.
+        return self.__stopHit
+
+    def process(self, broker_: Broker, bar_):
+        return broker_.getFillStrategy().fillStopLimitOrder(broker_, self, bar_)

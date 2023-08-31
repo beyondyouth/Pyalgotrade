@@ -299,7 +299,7 @@ class DefaultStrategy(FillStrategy):
 
         self.__slippageModel = slippageModel
 
-    def __calculateFillSize(self, broker_, order, bar):
+    def __calculateFillSize(self, broker_, order, bar: pyalgotrade.bar.BasicBar):
         ret = 0
 
         # If self.__volumeLimit is None then allow all the order to get filled.
@@ -316,7 +316,7 @@ class DefaultStrategy(FillStrategy):
 
         return ret
 
-    def fillMarketOrder(self, broker_, order, bar):
+    def fillMarketOrder(self, broker_, order, bar: pyalgotrade.bar.BasicBar):
         # Calculate the fill size for the order.
         fillSize = self.__calculateFillSize(broker_, order, bar)
         if fillSize == 0:
