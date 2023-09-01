@@ -32,7 +32,6 @@ from pyalgotrade import dispatchprio
 # 2: numpy arrays built using decimal.Decimal instances have dtype=object.
 @six.add_metaclass(abc.ABCMeta)
 class InstrumentTraits(object):
-
     # Return the floating point value number rounded.
     @abc.abstractmethod
     def roundQuantity(self, quantity):
@@ -46,6 +45,7 @@ class IntegerTraits(InstrumentTraits):
 
 class OrderExecutionInfo(object):
     """Execution information for an order."""
+
     def __init__(self, price, quantity, commission, dateTime):
         self.__price = price
         self.__quantity = quantity
@@ -88,6 +88,7 @@ class OrderExecutionInfo(object):
 # PARTIALLY_FILLED  -> PARTIALLY_FILLED
 # PARTIALLY_FILLED  -> FILLED
 # PARTIALLY_FILLED  -> CANCELED
+
 
 class Order(object):
     """Base class for orders.
@@ -165,7 +166,14 @@ class Order(object):
         State.PARTIALLY_FILLED: [State.PARTIALLY_FILLED, State.FILLED, State.CANCELED],
     }
 
-    def __init__(self, type_, action: Action, instrument, quantity, instrumentTraits: InstrumentTraits):
+    def __init__(
+        self,
+        type_,
+        action: Action,
+        instrument,
+        quantity,
+        instrumentTraits: InstrumentTraits,
+    ):
         if quantity is not None and quantity <= 0:
             raise Exception("Invalid quantity")
 
@@ -185,19 +193,21 @@ class Order(object):
         self.__submitDateTime = None
 
     # This is to check that orders are not compared directly. order ids should be compared.
-#    def __eq__(self, other):
-#        if other is None:
-#            return False
-#        assert(False)
+    #    def __eq__(self, other):
+    #        if other is None:
+    #            return False
+    #        assert(False)
 
     # This is to check that orders are not compared directly. order ids should be compared.
-#    def __ne__(self, other):
-#        if other is None:
-#            return True
-#        assert(False)
+    #    def __ne__(self, other):
+    #        if other is None:
+    #            return True
+    #        assert(False)
 
     def _setQuantity(self, quantity):
-        assert self.__quantity is None, "Can only change the quantity if it was undefined"
+        assert (
+            self.__quantity is None
+        ), "Can only change the quantity if it was undefined"
         assert quantity > 0, "Invalid quantity"
         self.__quantity = quantity
 
@@ -217,10 +227,10 @@ class Order(object):
     def getType(self):
         """Returns the order type. Valid order types are:
 
-         * Order.Type.MARKET
-         * Order.Type.LIMIT
-         * Order.Type.STOP
-         * Order.Type.STOP_LIMIT
+        * Order.Type.MARKET
+        * Order.Type.LIMIT
+        * Order.Type.STOP
+        * Order.Type.STOP_LIMIT
         """
         return self.__type
 
@@ -229,29 +239,29 @@ class Order(object):
         return self.__submitDateTime
 
     def setSubmitted(self, orderId, dateTime):
-        assert(self.__id is None or orderId == self.__id)
+        assert self.__id is None or orderId == self.__id
         self.__id = orderId
         self.__submitDateTime = dateTime
 
     def getAction(self):
         """Returns the order action. Valid order actions are:
 
-         * Order.Action.BUY
-         * Order.Action.BUY_TO_COVER
-         * Order.Action.SELL
-         * Order.Action.SELL_SHORT
+        * Order.Action.BUY
+        * Order.Action.BUY_TO_COVER
+        * Order.Action.SELL
+        * Order.Action.SELL_SHORT
         """
         return self.__action
 
     def getState(self):
         """Returns the order state. Valid order states are:
 
-         * Order.State.INITIAL (the initial state).
-         * Order.State.SUBMITTED
-         * Order.State.ACCEPTED
-         * Order.State.CANCELED
-         * Order.State.PARTIALLY_FILLED
-         * Order.State.FILLED
+        * Order.State.INITIAL (the initial state).
+        * Order.State.SUBMITTED
+        * Order.State.ACCEPTED
+        * Order.State.CANCELED
+        * Order.State.PARTIALLY_FILLED
+        * Order.State.FILLED
         """
         return self.__state
 
@@ -342,28 +352,36 @@ class Order(object):
 
     def addExecutionInfo(self, orderExecutionInfo: OrderExecutionInfo):
         if orderExecutionInfo.getQuantity() > self.getRemaining():
-            raise Exception(f"Invalid fill size. {self.getRemaining()} remaining and {orderExecutionInfo.getQuantity()} filled")
-
+            raise Exception(
+                f"Invalid fill size. {self.getRemaining()} remaining and {orderExecutionInfo.getQuantity()} filled"
+            )
 
         if self.__avgFillPrice is None:
             self.__avgFillPrice = orderExecutionInfo.getPrice()
         else:
-            self.__avgFillPrice = (self.__avgFillPrice * self.__filled + orderExecutionInfo.getPrice() * orderExecutionInfo.getQuantity()) / float(self.__filled + orderExecutionInfo.getQuantity())
+            self.__avgFillPrice = (
+                self.__avgFillPrice * self.__filled
+                + orderExecutionInfo.getPrice() * orderExecutionInfo.getQuantity()
+            ) / float(self.__filled + orderExecutionInfo.getQuantity())
 
         self.__executionInfo = orderExecutionInfo
-        self.__filled = self.getInstrumentTraits().roundQuantity(self.__filled + orderExecutionInfo.getQuantity())
+        self.__filled = self.getInstrumentTraits().roundQuantity(
+            self.__filled + orderExecutionInfo.getQuantity()
+        )
         self.__commissions += orderExecutionInfo.getCommission()
 
         if self.getRemaining() == 0:
             self.switchState(Order.State.FILLED)
         else:
-            assert(not self.__allOrNone)
+            assert not self.__allOrNone
             self.switchState(Order.State.PARTIALLY_FILLED)
 
     def switchState(self, newState: State):
         validTransitions = Order.VALID_TRANSITIONS.get(self.__state, [])
         if newState not in validTransitions:
-            raise Exception(f"Invalid order state transition from {Order.State.toString(self.__state)} to {Order.State.toString(newState)}")
+            raise Exception(
+                f"Invalid order state transition from {Order.State.toString(self.__state)} to {Order.State.toString(newState)}"
+            )
 
         else:
             self.__state = newState
@@ -396,8 +414,12 @@ class MarketOrder(Order):
         This is a base class and should not be used directly.
     """
 
-    def __init__(self, action, instrument, quantity, onClose, instrumentTraits: InstrumentTraits):
-        super(MarketOrder, self).__init__(Order.Type.MARKET, action, instrument, quantity, instrumentTraits)
+    def __init__(
+        self, action, instrument, quantity, onClose, instrumentTraits: InstrumentTraits
+    ):
+        super(MarketOrder, self).__init__(
+            Order.Type.MARKET, action, instrument, quantity, instrumentTraits
+        )
         self.__onClose = onClose
 
     def getFillOnClose(self):
@@ -413,8 +435,17 @@ class LimitOrder(Order):
         This is a base class and should not be used directly.
     """
 
-    def __init__(self, action: Order.Action, instrument, limitPrice, quantity, instrumentTraits: InstrumentTraits):
-        super(LimitOrder, self).__init__(Order.Type.LIMIT, action, instrument, quantity, instrumentTraits)
+    def __init__(
+        self,
+        action: Order.Action,
+        instrument,
+        limitPrice,
+        quantity,
+        instrumentTraits: InstrumentTraits,
+    ):
+        super(LimitOrder, self).__init__(
+            Order.Type.LIMIT, action, instrument, quantity, instrumentTraits
+        )
         self.__limitPrice = limitPrice
 
     def getLimitPrice(self):
@@ -430,8 +461,17 @@ class StopOrder(Order):
         This is a base class and should not be used directly.
     """
 
-    def __init__(self, action: Order.Action, instrument, stopPrice, quantity, instrumentTraits: InstrumentTraits):
-        super(StopOrder, self).__init__(Order.Type.STOP, action, instrument, quantity, instrumentTraits)
+    def __init__(
+        self,
+        action: Order.Action,
+        instrument,
+        stopPrice,
+        quantity,
+        instrumentTraits: InstrumentTraits,
+    ):
+        super(StopOrder, self).__init__(
+            Order.Type.STOP, action, instrument, quantity, instrumentTraits
+        )
         self.__stopPrice = stopPrice
 
     def getStopPrice(self):
@@ -447,8 +487,18 @@ class StopLimitOrder(Order):
         This is a base class and should not be used directly.
     """
 
-    def __init__(self, action: Order.Action, instrument, stopPrice, limitPrice, quantity, instrumentTraits: InstrumentTraits):
-        super(StopLimitOrder, self).__init__(Order.Type.STOP_LIMIT, action, instrument, quantity, instrumentTraits)
+    def __init__(
+        self,
+        action: Order.Action,
+        instrument,
+        stopPrice,
+        limitPrice,
+        quantity,
+        instrumentTraits: InstrumentTraits,
+    ):
+        super(StopLimitOrder, self).__init__(
+            Order.Type.STOP_LIMIT, action, instrument, quantity, instrumentTraits
+        )
         self.__stopPrice = stopPrice
         self.__limitPrice = limitPrice
 
@@ -474,7 +524,7 @@ class OrderEvent(object):
         self.__eventType = eventyType
         self.__eventInfo = eventInfo
 
-    def getOrder(self):
+    def getOrder(self) -> Order:
         return self.__order
 
     def getEventType(self):
