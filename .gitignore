@@ -8,7 +8,9 @@ doc/_build
 .ropeproject
 .tox
 .pytest_cache
+*.csv
 
+/.vscode
 /venv
 /data
 /dist
