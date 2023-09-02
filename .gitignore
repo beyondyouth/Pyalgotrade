@@ -8,7 +8,6 @@ doc/_build
 .ropeproject
 .tox
 .pytest_cache
-*.csv
 
 /.vscode
 /venv
@@ -20,9 +19,5 @@ doc/_build
 
 /testcases/credentials.py
 
-/bin
-/lib
-/share
 *.csv
-*.cfg
 *.log
