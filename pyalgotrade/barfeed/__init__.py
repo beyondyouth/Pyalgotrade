@@ -58,8 +58,7 @@ class BaseBarFeed(feed.BaseFeed):
 
     def setUseAdjustedValues(self, useAdjusted):
         if useAdjusted and not self.barsHaveAdjClose():
-            raise Exception(
-                "The barfeed doesn't support adjusted close values")
+            raise Exception("The barfeed doesn't support adjusted close values")
         # This is to affect future dataseries when they get created.
         self.__useAdjustedValues = useAdjusted
         # Update existing dataseries
@@ -98,12 +97,13 @@ class BaseBarFeed(feed.BaseFeed):
             dateTime = bars.getDateTime()
 
             # Check that current bar datetimes are greater than the previous one.
-            if self.__currentBars is not None and self.__currentBars.getDateTime() >= dateTime:
+            if (
+                self.__currentBars is not None
+                and self.__currentBars.getDateTime() >= dateTime
+            ):
                 raise Exception(
-                    "Bar date times are not in order. Previous datetime was %s and current datetime is %s" % (
-                        self.__currentBars.getDateTime(),
-                        dateTime
-                    )
+                    "Bar date times are not in order. Previous datetime was %s and current datetime is %s"
+                    % (self.__currentBars.getDateTime(), dateTime)
                 )
 
             # Update self.__currentBars and self.__lastBars
@@ -156,7 +156,9 @@ class BaseBarFeed(feed.BaseFeed):
 # This class is used by the optimizer module. The barfeed is already built on the server side,
 # and the bars are sent back to workers.
 class OptimizerBarFeed(BaseBarFeed):
-    def __init__(self, frequency: Frequency, instruments: list, bars: list[bar.Bars], maxLen=None):
+    def __init__(
+        self, frequency: Frequency, instruments: list, bars: list[bar.Bars], maxLen=None
+    ):
         super(OptimizerBarFeed, self).__init__(frequency, maxLen)
         for instrument in instruments:
             self.registerInstrument(instrument)
@@ -165,8 +167,9 @@ class OptimizerBarFeed(BaseBarFeed):
         self.__currDateTime = None
 
         try:
-            self.__barsHaveAdjClose = self.__bars[0][instruments[0]].getAdjClose(
-            ) is not None
+            self.__barsHaveAdjClose = (
+                self.__bars[0][instruments[0]].getAdjClose() is not None
+            )
         except Exception:
             self.__barsHaveAdjClose = False
 
@@ -186,7 +189,11 @@ class OptimizerBarFeed(BaseBarFeed):
         pass
 
     def peekDateTime(self):
-        return self.__bars[self.__nextPos].getDateTime() if self.__nextPos < len(self.__bars) else None
+        return (
+            self.__bars[self.__nextPos].getDateTime()
+            if self.__nextPos < len(self.__bars)
+            else None
+        )
 
     def getNextBars(self):
         ret = None

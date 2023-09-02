@@ -29,7 +29,8 @@ from pyalgotrade import barfeed
 from pyalgotrade import observer
 from pyalgotrade import dispatcher
 from pyalgotrade import stratanalyzer
-import pyalgotrade.strategy.position
+from pyalgotrade.strategy import position
+import pyalgotrade.bar
 from pyalgotrade import logger
 from pyalgotrade.barfeed import resampled
 
@@ -104,19 +105,15 @@ class BaseStrategy(object):
     def getUseAdjustedValues(self):
         return False
 
-    def registerPositionOrder(
-        self, position: pyalgotrade.strategy.position.Position, order
-    ):
+    def registerPositionOrder(self, position: position.Position, order):
         self.__activePositions.add(position)
         assert order.isActive()  # Why register an inactive order ?
         self.__orderToPosition[order.getId()] = position
 
-    def unregisterPositionOrder(
-        self, position: pyalgotrade.strategy.position.Position, order
-    ):
+    def unregisterPositionOrder(self, position: position.Position, order):
         del self.__orderToPosition[order.getId()]
 
-    def unregisterPosition(self, position: pyalgotrade.strategy.position.Position):
+    def unregisterPosition(self, position: position.Position):
         assert not position.isOpen()
         self.__activePositions.remove(position)
 
@@ -510,7 +507,7 @@ class BaseStrategy(object):
             allOrNone,
         )
 
-    def onEnterOk(self, position: pyalgotrade.strategy.position.Position):
+    def onEnterOk(self, position: position.Position):
         """Override (optional) to get notified when the order submitted to enter a position was filled. The default implementation is empty.
 
         :param position: A position returned by any of the enterLongXXX or enterShortXXX methods.
@@ -518,7 +515,7 @@ class BaseStrategy(object):
         """
         pass
 
-    def onEnterCanceled(self, position: pyalgotrade.strategy.position.Position):
+    def onEnterCanceled(self, position: position.Position):
         """Override (optional) to get notified when the order submitted to enter a position was canceled. The default implementation is empty.
 
         :param position: A position returned by any of the enterLongXXX or enterShortXXX methods.
@@ -527,7 +524,7 @@ class BaseStrategy(object):
         pass
 
     # Called when the exit order for a position was filled.
-    def onExitOk(self, position: pyalgotrade.strategy.position.Position):
+    def onExitOk(self, position: position.Position):
         """Override (optional) to get notified when the order submitted to exit a position was filled. The default implementation is empty.
 
         :param position: A position returned by any of the enterLongXXX or enterShortXXX methods.
@@ -536,7 +533,7 @@ class BaseStrategy(object):
         pass
 
     # Called when the exit order for a position was canceled.
-    def onExitCanceled(self, position: pyalgotrade.strategy.position.Position):
+    def onExitCanceled(self, position: position.Position):
         """Override (optional) to get notified when the order submitted to exit a position was canceled. The default implementation is empty.
 
         :param position: A position returned by any of the enterLongXXX or enterShortXXX methods.
@@ -606,7 +603,7 @@ class BaseStrategy(object):
 
             pos.onOrderEvent(orderEvent)
 
-    def __onBars(self, dateTime, bars):
+    def __onBars(self, dateTime, bars: pyalgotrade.bar.Bars):
         # THE ORDER HERE IS VERY IMPORTANT
 
         # 1: Let analyzers process bars.

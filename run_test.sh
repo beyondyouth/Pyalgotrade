@@ -1,6 +1,6 @@
 #!/bin/sh
 
-list=`find ./testcases -name "*test.py"`
+list=`find testcases -name "*test.py"`
 exclude_files="./testcases/twitter_test.py ./testcases/quandl_test.py ./testcases/bitstamp_test.py ./testcases/pusher_test.py"
 testlog="unittest.log"
 

@@ -12,18 +12,25 @@ class BBands(strategy.BacktestingStrategy):
     def __init__(self, feed, instrument, bBandsPeriod):
         super(BBands, self).__init__(feed)
         self.__instrument = instrument
-        self.__bbands = bollinger.BollingerBands(feed[instrument].getCloseDataSeries(), bBandsPeriod, 2)
+        self.__bbands = bollinger.BollingerBands(
+            feed[instrument].getCloseDataSeries(), bBandsPeriod, 2
+        )
 
     def getBollingerBands(self):
         return self.__bbands
 
     def onOrderUpdated(self, order):
-        print(order)
-        print(order.__dict__)
+        # print(order)
+        # print(order.__dict__)
         orderType = "Buy" if order.isBuy() else "Sell"
-        self.info("%s order %d updated - Status: %s" % (
-            orderType, order.getId(), basebroker.Order.State.toString(order.getState())
-        ))
+        self.info(
+            "%s order %d updated - Status: %s"
+            % (
+                orderType,
+                order.getId(),
+                basebroker.Order.State.toString(order.getState()),
+            )
+        )
 
     def onBars(self, bars):
         lower = self.__bbands.getLowerBand()[-1]
@@ -32,6 +39,7 @@ class BBands(strategy.BacktestingStrategy):
             return
 
         shares = self.getBroker().getShares(self.__instrument)
+        # bar: BasicBar
         bar = bars[self.__instrument]
         if shares == 0 and bar.getClose() < lower:
             sharesToBuy = int(self.getBroker().getCash(False) / bar.getClose())
@@ -39,9 +47,11 @@ class BBands(strategy.BacktestingStrategy):
             self.marketOrder(self.__instrument, sharesToBuy, onClose=True)
         elif shares > 0 and bar.getClose() > upper:
             self.info(f"Placing sell market order for {shares} shares")
-            self.marketOrder(self.__instrument, -1*shares, onClose=True)
+            self.marketOrder(self.__instrument, -1 * shares, onClose=True)
+
 
 from pyalgotrade.barfeed import quandlfeed
+
 
 def main(plot):
     instrument = "399997"
@@ -57,15 +67,21 @@ def main(plot):
 
     if plot:
         plt = plotter.StrategyPlotter(strat, True, True, True)
-        plt.getInstrumentSubplot(instrument).addDataSeries("upper", strat.getBollingerBands().getUpperBand())
-        plt.getInstrumentSubplot(instrument).addDataSeries("middle", strat.getBollingerBands().getMiddleBand())
-        plt.getInstrumentSubplot(instrument).addDataSeries("lower", strat.getBollingerBands().getLowerBand())
+        plt.getInstrumentSubplot(instrument).addDataSeries(
+            "upper", strat.getBollingerBands().getUpperBand()
+        )
+        plt.getInstrumentSubplot(instrument).addDataSeries(
+            "middle", strat.getBollingerBands().getMiddleBand()
+        )
+        plt.getInstrumentSubplot(instrument).addDataSeries(
+            "lower", strat.getBollingerBands().getLowerBand()
+        )
 
     strat.run()
     print("Sharpe ratio: %.2f" % sharpeRatioAnalyzer.getSharpeRatio(0.05))
 
-    if plot:
-        plt.plot()
+    # if plot:
+    #     plt.plot()
 
 
 if __name__ == "__main__":
