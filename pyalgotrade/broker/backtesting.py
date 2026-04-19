@@ -197,8 +197,6 @@ class Broker(broker.Broker):
         self.__fillStrategy = fillstrategy.DefaultStrategy()
         self.__logger = logger.getLogger(Broker.LOGGER_NAME)
 
-        # It is VERY important that the broker subscribes to barfeed events before the strategy.
-        barFeed.getNewValuesEvent().subscribe(self.onBars)
         self.__barFeed = barFeed
         self.__allowNegativeCash = False
         self.__nextOrderId = 1
